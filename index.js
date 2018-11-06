@@ -11,7 +11,6 @@ import {
   StatusBar,
   StyleSheet,
 } from 'react-native';
-const AnimatedFlatList = Animated.createAnimatedComponent(FlatList);
 
 // Measure function triggers false positives
 YellowBox.ignoreWarnings(['Warning: isMounted(...) is deprecated'])
