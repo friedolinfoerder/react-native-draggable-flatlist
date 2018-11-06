@@ -1,6 +1,5 @@
 import React, { Component, PureComponent } from 'react'
 import {
-  Animated,
   LayoutAnimation,
   YellowBox,
   Animated,
@@ -106,7 +105,7 @@ class SortableFlatList extends Component {
         const spacerMeasurements = this._measurements[spacerIndex]
         const lastElementMeasurements = this._measurements[data.length - 1]
 
-        // If user flings row up and lets go in the middle of an animation measurements can error out. 
+        // If user flings row up and lets go in the middle of an animation measurements can error out.
         // Give layout animations some time to complete and animate element into place before calling onMoveEnd
 
         // Spacers have different positioning depending on whether the spacer row is before or after the active row.
@@ -339,9 +338,22 @@ class SortableFlatList extends Component {
     }
   }
 
+  componentDidMount() {
+    if(this._animatedListRef.current) {
+      this._flatList = this._animatedListRef.current.getNode();
+    }
+  }
+
+  onScroll = (event) => {
+    const { horizontal } = this.props
+    this._scrollOffset = event.nativeEvent.contentOffset[horizontal ? 'x' : 'y'];
+  }
+
+  _animatedListRef = React.createRef();
+
   render() {
-    const { horizontal, keyExtractor, onScroll, animated } = this.props
-    const List = animated ? AnimatedFlatList : FlatList;
+    const { horizontal, keyExtractor, onScrollMapping = [], animated } = this.props
+
     return (
       <View
         onLayout={e => {
@@ -351,20 +363,16 @@ class SortableFlatList extends Component {
         {...this._panResponder.panHandlers}
         style={styles.wrapper} // Setting { opacity: 1 } fixes Android measurement bug: https://github.com/facebook/react-native/issues/18034#issuecomment-368417691
       >
-        <List
+        <Animated.FlatList
           {...this.props}
           scrollEnabled={this.state.activeRow === -1}
-          ref={ref => this._flatList = ref}
+          ref={this._animatedListRef}
           renderItem={this.renderItem}
           extraData={this.state}
           keyExtractor={keyExtractor || this.keyExtractor}
-          onScroll={event => {
-            this._scrollOffset = event.nativeEvent.contentOffset[horizontal ? 'x' : 'y'];
-            if(onScroll) {
-              onScroll(event);       
-            }
-          }}
-          scrollEventThrottle={16}
+          onScroll={Animated.event(
+            onScrollMapping,
+            {useNativeDriver:true, listener:this.onScroll})}
         />
         {this.renderHoverComponent()}
       </View>
