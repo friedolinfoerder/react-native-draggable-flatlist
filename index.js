@@ -1,5 +1,6 @@
 import React, { Component, PureComponent } from 'react'
 import {
+  Animated,
   LayoutAnimation,
   YellowBox,
   Animated,
@@ -10,7 +11,8 @@ import {
   UIManager,
   StatusBar,
   StyleSheet,
-} from 'react-native'
+} from 'react-native';
+const AnimatedFlatList = Animated.createAnimatedComponent(FlatList);
 
 // Measure function triggers false positives
 YellowBox.ignoreWarnings(['Warning: isMounted(...) is deprecated'])
@@ -338,7 +340,8 @@ class SortableFlatList extends Component {
   }
 
   render() {
-    const { horizontal, keyExtractor } = this.props
+    const { horizontal, keyExtractor, onScroll, animated } = this.props
+    const List = animated ? AnimatedFlatList : FlatList;
     return (
       <View
         onLayout={e => {
@@ -348,14 +351,19 @@ class SortableFlatList extends Component {
         {...this._panResponder.panHandlers}
         style={styles.wrapper} // Setting { opacity: 1 } fixes Android measurement bug: https://github.com/facebook/react-native/issues/18034#issuecomment-368417691
       >
-        <FlatList
+        <List
           {...this.props}
           scrollEnabled={this.state.activeRow === -1}
           ref={ref => this._flatList = ref}
           renderItem={this.renderItem}
           extraData={this.state}
           keyExtractor={keyExtractor || this.keyExtractor}
-          onScroll={({ nativeEvent }) => this._scrollOffset = nativeEvent.contentOffset[horizontal ? 'x' : 'y']}
+          onScroll={event => {
+            this._scrollOffset = event.nativeEvent.contentOffset[horizontal ? 'x' : 'y'];
+            if(onScroll) {
+              onScroll(event);       
+            }
+          }}
           scrollEventThrottle={16}
         />
         {this.renderHoverComponent()}
